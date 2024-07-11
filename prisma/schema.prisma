@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DB_URL")
+}
+
+model events {
+  id          Int      @id
+  match_id    Int?
+  type        String?  @db.VarChar(50)
+  player_id   Int?
+  minute      Int?
+  description String?  @db.Text
+  matches     matches? @relation(fields: [match_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "events_ibfk_1")
+  players     players? @relation(fields: [player_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "events_ibfk_2")
+
+  @@index([match_id], map: "match_id")
+  @@index([player_id], map: "player_id")
+}
+
+model leagues {
+  id         Int         @id
+  name       String      @db.VarChar(255)
+  country    String      @db.VarChar(255)
+  season     String      @db.VarChar(255)
+  start_date DateTime    @db.Date
+  end_date   DateTime    @db.Date
+  matches    matches[]
+  standings  standings[]
+  teams      teams[]
+}
+
+model matches {
+  id                                Int          @id
+  date                              DateTime     @db.Date
+  home_team_id                      Int?
+  away_team_id                      Int?
+  league_id                         Int?
+  home_team_score                   Int?
+  away_team_score                   Int?
+  status                            String?      @db.VarChar(50)
+  minute                            Int?
+  events                            events[]
+  teams_matches_home_team_idToteams teams?       @relation("matches_home_team_idToteams", fields: [home_team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "matches_ibfk_1")
+  teams_matches_away_team_idToteams teams?       @relation("matches_away_team_idToteams", fields: [away_team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "matches_ibfk_2")
+  leagues                           leagues?     @relation(fields: [league_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "matches_ibfk_3")
+  statistics                        statistics[]
+
+  @@index([away_team_id], map: "away_team_id")
+  @@index([home_team_id], map: "home_team_id")
+  @@index([league_id], map: "league_id")
+}
+
+model players {
+  id            Int          @id
+  first_name    String       @db.VarChar(255)
+  last_name     String       @db.VarChar(255)
+  date_of_birth DateTime     @db.Date
+  nationality   String       @db.VarChar(255)
+  position      String?      @db.VarChar(50)
+  team_id       Int?
+  events        events[]
+  teams         teams?       @relation(fields: [team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "players_ibfk_1")
+  statistics    statistics[]
+
+  @@index([team_id], map: "team_id")
+}
+
+model standings {
+  id              Int      @id
+  league_id       Int?
+  team_id         Int?
+  position        Int?
+  played_games    Int?
+  won             Int?
+  draw            Int?
+  lost            Int?
+  points          Int?
+  goals_for       Int?
+  goals_against   Int?
+  goal_difference Int?
+  leagues         leagues? @relation(fields: [league_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "standings_ibfk_1")
+  teams           teams?   @relation(fields: [team_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "standings_ibfk_2")
+
+  @@index([league_id], map: "league_id")
+  @@index([team_id], map: "team_id")
+}
+
+model statistics {
+  id               Int      @id
+  player_id        Int?
+  match_id         Int?
+  minutes_played   Int?
+  goals            Int?
+  assists          Int?
+  yellow_cards     Int?
+  red_cards        Int?
+  passes_completed Int?
+  shots_on_target  Int?
+  players          players? @relation(fields: [player_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "statistics_ibfk_1")
+  matches          matches? @relation(fields: [match_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "statistics_ibfk_2")
+
+  @@index([match_id], map: "match_id")
+  @@index([player_id], map: "player_id")
+}
+
+model teams {
+  id                                  Int         @id
+  name                                String      @db.VarChar(255)
+  short_name                          String?     @db.VarChar(50)
+  founded                             Int?        @db.Year
+  venue_name                          String?     @db.VarChar(255)
+  venue_city                          String?     @db.VarChar(255)
+  venue_capacity                      Int?
+  league_id                           Int?
+  matches_matches_home_team_idToteams matches[]   @relation("matches_home_team_idToteams")
+  matches_matches_away_team_idToteams matches[]   @relation("matches_away_team_idToteams")
+  players                             players[]
+  standings                           standings[]
+  leagues                             leagues?    @relation(fields: [league_id], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "teams_ibfk_1")
+
+  @@index([league_id], map: "league_id")
+}
